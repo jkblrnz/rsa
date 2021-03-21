@@ -1,19 +1,21 @@
 #ifndef RSA
 #define RSA
 
+#include <boost/multiprecision/cpp_int.hpp>
+
 class rsa {
 
 private:
 public:
-    unsigned p,
+    boost::multiprecision::uint1024_t p,
              q,
              n,
              phi_n,
              e = 3, // bad without padding but fast
              d;
 
-    unsigned randPrime(int bits);
-    bool isPrime(unsigned n);
+    boost::multiprecision::uint1024_t randPrime(int bits);
+    bool isPrime(boost::multiprecision::uint1024_t n);
 
     bool calcN();
     bool calcPhi_n();
@@ -21,9 +23,8 @@ public:
     bool calcD();
 
     rsa();
-    rsa(unsigned p, unsigned q);
 
-    unsigned getPubKey();
+    boost::multiprecision::uint1024_t getPubKey();
 };
 
 #endif
