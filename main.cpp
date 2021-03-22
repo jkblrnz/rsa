@@ -1,16 +1,17 @@
 #include <iostream>
+#include <boost/multiprecision/cpp_int.hpp>
 #include "rsa.cpp"
+
 
 int main() {
 
-    rsa encrypt(5, 13);
+    rsa encrypt;
 
-    //for(int i = 0; i < 100; i++)
-    //    if(encrypt.isPrime(i))
-    //        std::cout << i << " ";
-
-    /*for(int i = 0; i < 100; i++)
-        std::cout << encrypt.randPrime(8) << " ";*/
+    std::cout << "p = " << encrypt.p << std::endl 
+              << "q = " << encrypt.q << std::endl 
+              << "phi_n = " << encrypt.phi_n << std::endl 
+              << "d = " << encrypt.d << std::endl
+              << "e = " << encrypt.e << std::endl;
 
     std::string message;
     message = "SAMPLETEXTHERE";

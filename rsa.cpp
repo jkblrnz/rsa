@@ -1,19 +1,34 @@
+#include <boost/multiprecision/cpp_int.hpp>
 #include <random>
 #include <time.h>
 #include "rsa.h"
 
-rsa::rsa(unsigned a, unsigned b) {
+namespace mp = boost::multiprecision;
+
+rsa::rsa() {
     std::srand(time(0));
-    p = a;
-    q = b;
-    calcN();
-    calcPhi_n(); // phi_n has to be found before D can be
-    calcD();
+
+    d = static_cast<mp::uint1024_t>(1);
+    while(d == 1) { // ensure theres a valid d for the set of values
+        mp::uint1024_t a = 0,
+                      b = 0;
+
+        while((a * b) % e != 1) { // we initally pick e which is common so we have to make sure p and q work with e
+            a = randPrime(512);
+            b = randPrime(512);
+            p = a;
+            q = b;
+        }
+
+        calcN();
+        calcPhi_n(); // phi_n has to be found before D can be
+        calcD();
+    }
 }
 
 // (a ^ exp) mod n
-unsigned power(unsigned a, unsigned exp, unsigned n) {
-    unsigned res = 1;
+mp::uint1024_t power(mp::uint1024_t a, mp::uint1024_t exp, mp::uint1024_t n) {
+    mp::uint1024_t res = 1;
     a = a % n;
 
     while (exp > 0) {
@@ -26,10 +41,10 @@ unsigned power(unsigned a, unsigned exp, unsigned n) {
     return res;
 }
 
-bool millerRabin(unsigned d, unsigned n) { // edit to clean up
-    int a = 2 + std::rand() % (n - 4); // this step can reduce the number of req iterations
+bool millerRabin(mp::uint1024_t d, mp::uint1024_t n) { // edit to clean up
+    mp::uint1024_t a = 2 + std::rand() % (n - 4); // this step can reduce the number of req iterations
 
-    int x = power(a, d, n);
+    mp::uint1024_t x = power(a, d, n);
 
     if (x == 1 || x == n - 1) return true;
 
@@ -44,7 +59,7 @@ bool millerRabin(unsigned d, unsigned n) { // edit to clean up
     return false;
 }
 
-bool rsa::isPrime(unsigned n) {
+bool rsa::isPrime(mp::uint1024_t n) {
     int k = 40; // repeat miller robin to reduce chance of error .75 ^ k = err 40 is the limit to efectiveness
 
     //millerRabin do not handle less than 5 well so this checks for edge cases
@@ -52,7 +67,7 @@ bool rsa::isPrime(unsigned n) {
     if (n <= 3) return true; // 2 and 3 are prime
 
     // figure out better
-    int d = n - 1;
+    mp::uint1024_t d = n - 1;
     while (d % 2 == 0) // find the first one with an odd power
         d /= 2; // is this the witness?
 
@@ -64,13 +79,13 @@ bool rsa::isPrime(unsigned n) {
     return true;
 }
 
-unsigned rsa::randPrime(int bits) { // kinda bad to have a potentially forever loop, but there should be no cases where it does go forever
-    unsigned max = bits != 8 ? (1 << bits) - 1 : 511, // special case when at max size of var to prevent overflow will need to be smarter for a 512 bit
-             min = 1 << (bits - 1),
-             genPrime = 0;
+mp::uint1024_t rsa::randPrime(int bits) { // kinda bad to have a potentially forever loop, but there should be no cases where it does go forever
+    mp::uint1024_t max = mp::pow(mp::uint1024_t(2),bits), // special case when at max size of var to prevent overflow will need to be smarter for a 512 bit
+                  min = mp::pow(mp::uint1024_t(2),bits - 1) - 1,
+                  genPrime = 0;
 
-    max >>= 1;
-    min >>= 1;
+    max /= 2;
+    min /= 2;
 
     while(1) {
         genPrime = 2 * (std::rand() % ((max - 1) - min + 1) + min) + 1; // genPrime is rand odd n bits long
@@ -89,33 +104,37 @@ bool rsa::calcPhi_n() {
     return true;
 }
 
-unsigned xGcd(unsigned a, unsigned b, unsigned &x, unsigned &y) { // x and y are the mult parts not entirely useful for us, but ill include it
-    if(b == 0) { // base case
-        x = 1;
-        y = 0;
-        return a;
+mp::uint1024_t xGcd(mp::uint1024_t a, mp::uint1024_t b, mp::int1024_t &x, mp::int1024_t &y) { // x and y are the mult parts not entirely useful for us, but ill include it
+    if(a == 0) { // base case
+        x = 0;
+        y = 1;
+        return b;
     }
 
-    unsigned x1, y1,
-             gcd = xGcd(b, a % b, x1, y1); // recursion might wanna do iterative but for now good enough
-    x = y1;
-    y = x1 - (a / b) * y1;
+    mp::int1024_t x1, y1;
+
+    mp::uint1024_t gcd = xGcd(b % a, a, x1, y1); // recursion might wanna do iterative but for now good enough
+    x = y1 - x1 * (b / a);
+    y = x1;
     return gcd;
 }
 
 // e is predetermined from the acceptable list find D from e's modular inverse
 // calcPhi_n should be ran before this function
 bool rsa::calcD() {
-    unsigned x, y; // can be useful for debug
-    d = xGcd(e, phi_n, x, y);
+    mp::int1024_t x, y; // can be useful for debug
+    mp::uint1024_t key;
+
+    xGcd(e, phi_n, x, y);
+    d = static_cast<mp::uint1024_t>((x % phi_n + phi_n) % phi_n);
     return true;
 }
 
-unsigned rsa::getPubKey() {
+mp::uint1024_t rsa::getPubKey() {
     return 0;
 }
 
-unsigned rsa::char_to_num(char a)
+unsigned char_to_num(char a)
 {
     int x;
     x = a - 65; //Messy conversion: A is 65 in ASCII, so this makes it "0" in our code.
@@ -128,7 +147,7 @@ unsigned rsa::char_to_num(char a)
     return x;
 }
 
-char rsa::num_to_char(unsigned a)
+char num_to_char(unsigned a)
 {
     char x;
     x = a + 65;
@@ -178,7 +197,7 @@ std::string rsa::encrypt(std::string plaintext)
     for(int d = 0; d < tri_count; d++)
     {
         //The fabled encrypt function, p^e % n
-        temp = power(trigraphs[d],e, n);
+        temp = static_cast<unsigned>(power(trigraphs[d],e, n));
         //Calculate the four quotients
         q1 = 0;
         while(temp >= 26 * 26 * 26)
@@ -249,7 +268,7 @@ std::string rsa::decrypt(std::string ciphertext)
     while(c < tri_length)
     {
         temp = trigraph[c++];
-        temp = power(temp,d, n);
+        temp = static_cast<unsigned>(power(temp,d, n));
     }
     return ciphertext;
 }
