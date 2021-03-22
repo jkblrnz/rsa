@@ -3,30 +3,27 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 
+namespace mp = boost::multiprecision;
+
 class rsa {
-
 private:
-public:
-    boost::multiprecision::uint1024_t p,
-             q,
-             n,
-             phi_n,
-             e = 257, // bad without padding but fast
-             d;
-
-    boost::multiprecision::uint1024_t randPrime(int bits);
-    bool isPrime(boost::multiprecision::uint1024_t n);
-
-    bool calcN();
     bool calcPhi_n();
-
     bool calcD();
+    bool calcN();
+
+public:
+    mp::uint1024_t p, // not private for demonstration purposes
+                   q,
+                   phi_n,
+                   d,
+                   n,
+                   e = 257;
 
     rsa();
+    rsa(int bits);
 
-    std::string encrypt(std::string plaintext);
+    std::string encrypt(mp::uint1024_t other_e, mp::uint1024_t other_n, std::string plaintext);
     std::string decrypt(std::string ciphertext);
-    boost::multiprecision::uint1024_t getPubKey();
 };
 
 #endif
