@@ -14,7 +14,8 @@ int main() {
 
     std::string message;
     message = "SAMPLETEXTHERE";
-    message = encrypt.encrypt(message);
-    std::cout << std::endl << encrypt.decrypt(message);
+    std::cout << message << std::endl;
+    std::cout << encrypt.encrypt(message) << std::endl;
+    std::cout << encrypt.decrypt(message) << std::endl;
     return 0;
 }

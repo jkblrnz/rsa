@@ -178,7 +178,7 @@ std::string rsa::encrypt(std::string plaintext)
     for(int d = 0; d < tri_count; d++)
     {
         //The fabled encrypt function, p^e % n
-        temp = calc_exp(trigraphs[d],e, n);
+        temp = power(trigraphs[d],e, n);
         //Calculate the four quotients
         q1 = 0;
         while(temp >= 26 * 26 * 26)
@@ -212,7 +212,6 @@ std::string rsa::encrypt(std::string plaintext)
         t[0] = num_to_char(quadgraphs[d]);
         ciphertext.append(t);
     }
-    std::cout << std::endl;
     return ciphertext;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,14 +249,7 @@ std::string rsa::decrypt(std::string ciphertext)
     while(c < tri_length)
     {
         temp = trigraph[c++];
-        temp = calc_exp(temp,d, n);
+        temp = power(temp,d, n);
     }
     return ciphertext;
-}
-
-//Function to calculate a very large exponent with an associated modulus
-//CURRENTLY INCOMPLETE
-unsigned rsa::calc_exp(unsigned base, unsigned power, unsigned mod)
-{
-    return base;
 }
